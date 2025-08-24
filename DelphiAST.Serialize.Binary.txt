@@ -1,0 +1,22 @@
+type
+  TNodeClass = (ntSyntax, ntCompound, ntValued, ntComment);
+
+  TBinarySerializer = class
+  strict private
+    FStream     : TStream;
+    FStringList : TStringList;
+    FStringTable: TDictionary<string,integer>;
+  strict protected
+    function CheckSignature: boolean;
+    function CheckVersion: boolean;
+    function CreateNode(nodeClass: TNodeClass; nodeType: TSyntaxNodeType): TSyntaxNode;
+    function ReadNode(var node: TSyntaxNode): boolean;
+    function ReadNumber(var num: cardinal): Boolean;
+    function ReadString(var str: string): boolean;
+    function WriteNode(Node: TSyntaxNode): Boolean;
+    function WriteNumber(Num: cardinal): Boolean;
+    function WriteString(const S: string): Boolean;
+  public
+    function Read(Stream: TStream; var Root: TSyntaxNode): boolean;
+    function Write(Stream: TStream; Root: TSyntaxNode): boolean;
+  end;
