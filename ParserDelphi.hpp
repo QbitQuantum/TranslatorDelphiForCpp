@@ -34,6 +34,9 @@ class ParserEngine {
 	bool matchDierctionToken(bool _direction, TTokenID kind);
 	bool matchCurrentToken(TTokenID kind);
 	bool JunkToken();
+	bool neof() {
+		return PosBuffer < ParserBuffer.size();
+	}
 
 	std::vector<LexToken> GetLexToken(
 		int amount, 
@@ -55,7 +58,7 @@ public:
 };
 
 void ParserEngine::ParserRun() {
-	while (PosBuffer < ParserBuffer.size())
+	while (neof())
 	{
 		TTokenID Type = ParserBuffer[PosBuffer].type;
 		switch (Type)
@@ -84,7 +87,7 @@ bool ParserEngine::parseUnit() {
 	ClearJunkToken(direction::next);
 	std::vector<std::string> UnitName;
 
-	while (PosBuffer < ParserBuffer.size() && !matchCurrentToken(TTokenID::Semicolon)) {
+	while (neof() && !matchCurrentToken(TTokenID::Semicolon)) {
 		if (matchCurrentToken(TTokenID::Identifier) || matchCurrentToken(TTokenID::Dot))
 		{
 			if (matchCurrentToken(TTokenID::Identifier)) {
@@ -143,7 +146,7 @@ bool ParserEngine::parseClass() {
 	// Проверяем, наследуются ли другие классы
 	if (matchCurrentToken(TTokenID::LeftParen))
 	{
-		while (PosBuffer < ParserBuffer.size() && !matchCurrentToken(TTokenID::RightParen)) {
+		while (neof() && !matchCurrentToken(TTokenID::RightParen)) {
 			PosBuffer++;
 			ClearJunkToken(direction::next);
 			if (matchCurrentToken(TTokenID::Identifier))
@@ -157,7 +160,7 @@ bool ParserEngine::parseClass() {
 void ParserEngine::ClearJunkToken(bool _direction) {
 	
 	if (_direction == direction::next) {
-		while (PosBuffer < ParserBuffer.size() && JunkToken())
+		while (neof() && JunkToken())
 			PosBuffer++;
 	}
 	else {
