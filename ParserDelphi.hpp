@@ -137,13 +137,19 @@ bool ParserEngine::parseClass() {
 	std::string programm_name = buffer[1].value;
 	PosBuffer++;
 	
-	// Парсии тело акта
-	while (PosBuffer < ParserBuffer.size() && !matchCurrentToken(TTokenID::End)) {
-		PosBuffer++;
-		ClearJunkToken(direction::next);
+	ClearJunkToken(direction::next);
 
-		
-	};
+	std::vector<std::string> legatee;
+	// Проверяем, наследуются ли другие классы
+	if (matchCurrentToken(TTokenID::LeftParen))
+	{
+		while (PosBuffer < ParserBuffer.size() && !matchCurrentToken(TTokenID::RightParen)) {
+			PosBuffer++;
+			ClearJunkToken(direction::next);
+			if (matchCurrentToken(TTokenID::Identifier))
+				legatee.push_back(ParserBuffer[PosBuffer].value);
+		}
+	}
 
 	return true;
 };
