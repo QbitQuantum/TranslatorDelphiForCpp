@@ -21,8 +21,17 @@ public:
 private:
 };
 
+class ClassNode : public AST
+{
+    std::string class_name;
+    std::vector<std::string> name;
+public:
+    ClassNode(std::string ClassName) { class_name = ClassName; };
+    void print(int indent) const override {};
+    ~ClassNode() override {};
 
-
+private:
+};
 
 // Узел: объявление функции
 class FunctionDeclNode : public AST {

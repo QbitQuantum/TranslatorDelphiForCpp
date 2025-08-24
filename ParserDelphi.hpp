@@ -135,6 +135,15 @@ bool ParserEngine::parseClass() {
 	}
 
 	std::string programm_name = buffer[1].value;
+	PosBuffer++;
+	
+	// Парсии тело акта
+	while (PosBuffer < ParserBuffer.size() && !matchCurrentToken(TTokenID::End)) {
+		PosBuffer++;
+		ClearJunkToken(direction::next);
+
+		
+	};
 
 	return true;
 };

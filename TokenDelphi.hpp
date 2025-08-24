@@ -631,8 +631,4 @@ std::string GetErrorString(LexErrorType type) {
 
 }
 
-using Callback = void(*)(std::string);
-Callback LexError;
-
-
 #endif // LEXER_TOKEN

@@ -11,6 +11,9 @@
 #include "TokenKeywordMap.hpp"
 #include "TokenDirectiveMap.hpp"
 
+using Callback = void(*)(std::string);
+Callback LexError;
+
 #define DEF_GENERATION_TO_CHAR(X) \
 push_back_token_storage(); \
 LexToken LexToken{ X, std::string(1, constexprToChar(X)), CurrentLine, CurrentColumn }; \
