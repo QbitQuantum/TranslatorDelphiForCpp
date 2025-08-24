@@ -52,18 +52,15 @@ int main()
 
     LexerEngine lexEngine(code);
     auto lexbuffer = lexEngine.GetBufferToken();
-    
-    if (true)
-    {
-        ParserEngine parser(lexbuffer);
-        parser.ParserRun();
-    }
-    
+
+    ParserEngine parser(lexbuffer);
+    parser.ParserRun();
+
     if (false)
     {
         for (auto& Tok : lexbuffer) {
             std::cout << NameTTokenID(Tok.type) << " |" << Tok.value << "|\n";
         }
     }
-    
+
 }

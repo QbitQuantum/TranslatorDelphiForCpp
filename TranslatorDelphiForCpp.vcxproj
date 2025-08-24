@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{fa50b206-b7bd-4254-9010-72973dd1ad2e}</ProjectGuid>
-    <RootNamespace>ParserDelphi</RootNamespace>
+    <ProjectGuid>{95729eea-f668-4f08-b013-bea80b17760e}</ProjectGuid>
+    <RootNamespace>TranslatorDelphiForCpp</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -129,7 +129,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ParserDelphi.cpp" />
+    <ClCompile Include="TranslatorDelphiForCpp.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
