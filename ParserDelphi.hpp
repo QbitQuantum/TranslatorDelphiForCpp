@@ -57,6 +57,8 @@ class ParserEngine {
 	bool parseUnit();
 	bool parseClass();
 	bool parseProperty(int TypeScope);
+	bool parseConstructor(int TypeScope);
+	bool parseDestructor(int TypeScope);
 
 public:
 	ParserEngine(std::vector<LexToken> Buffer) { ParserBuffer = Buffer; };
@@ -148,6 +150,8 @@ bool ParserEngine::parseClass() {
 	std::string class_name = "";
 	// Наследники
 	std::vector<std::string> legatee;
+	// Декларация переменных
+	std::vector<std::pair<std::string, std::string>> declaration_param;
 
 	class_name = buffer[1].value;
 	PosBuffer++;
@@ -168,27 +172,80 @@ bool ParserEngine::parseClass() {
 	// Пропускаем RightParen
 	PosBuffer++;
 
+	int TypeScope = Scope::Public;
+	
 	// Парсим тело класса
 	while (neof() && !matchCurrentToken(TTokenID::End)) {
-		
 		// Проверяем видимость методов
-		// По умолчанию стоит публичный, если не найден один из других
-		// Как минимум позволяет избежать лишнюю проверку
-		int TypeScope = Scope::Public;
-		if (matchCurrentToken(TTokenID::Protected))
+		if (matchCurrentToken(TTokenID::Public))
+			TypeScope = Scope::Public;
+		else if (matchCurrentToken(TTokenID::Protected))
 			TypeScope = Scope::Protect;
-		if (matchCurrentToken(TTokenID::Private))
+		else if (matchCurrentToken(TTokenID::Private))
 			TypeScope = Scope::Private;
+
+		if (matchCurrentToken(TTokenID::Constructor)){
+			if (!parseConstructor(TypeScope))
+				return false;
+		}
+
+		if (matchCurrentToken(TTokenID::Destructor)) {
+			if (!parseDestructor(TypeScope))
+				return false;
+		}
+
+		if (matchCurrentToken(TTokenID::Identifier)) {
+			
+			std::string SafeValueToken = ParserBuffer[PosBuffer].value;
+			const std::vector<LexToken> matchDeclareVar = {
+				LexToken{TTokenID::Colon, ":", 1, 1},
+				LexToken{TTokenID::Identifier, "", 1, 1},
+				LexToken{TTokenID::Semicolon, ";", 1, 1},
+			};
+
+			std::vector<LexToken> bufferDeclareVar = GetLexToken(matchDeclareVar.size(), direction::next);
+
+			if (matchDeclareVar == bufferDeclareVar)
+				declaration_param.push_back({ SafeValueToken, bufferDeclareVar[1].value });
+		}
 
 		if (matchCurrentToken(TTokenID::Property))
 			if (!parseProperty(TypeScope))
 				return false;
+
+		PosBuffer++;
+		ClearJunkToken(direction::next);
 	}
 	return true;
 };
 
 bool ParserEngine::parseProperty(int TypeScope) {
 	// Получаем тело 
+	return true;
+};
+
+bool ParserEngine::parseConstructor(int TypeScope) {
+	// Заглушка
+	
+	PosBuffer++;
+	ClearJunkToken(direction::next);
+	if (!matchCurrentToken(TTokenID::Identifier))
+		return false;
+	std::string constructor_name = ParserBuffer[PosBuffer].value;
+	
+	PosBuffer++;
+	ClearJunkToken(direction::next);
+	if (!matchCurrentToken(TTokenID::LeftParen))
+		return false;
+
+	while (neof() && !matchCurrentToken(TTokenID::RightParen)) {
+		PosBuffer++;
+	}
+	return true;
+};
+
+bool ParserEngine::parseDestructor(int TypeScope) {
+	// Получаем деструктор 
 	return true;
 };
 
