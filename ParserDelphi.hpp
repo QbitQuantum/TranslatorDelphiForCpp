@@ -16,6 +16,12 @@ namespace kind {
 	constexpr int Body = 4;
 }
 
+namespace Scope {
+	constexpr int Private = 0;
+	constexpr int Public = 1;
+	constexpr int Protect = 3;
+}
+
 namespace direction {
 	constexpr bool next = true;
 	constexpr bool previous = false;
@@ -50,6 +56,7 @@ class ParserEngine {
 
 	bool parseUnit();
 	bool parseClass();
+	bool parseProperty(int TypeScope);
 
 public:
 	ParserEngine(std::vector<LexToken> Buffer) { ParserBuffer = Buffer; };
@@ -137,12 +144,16 @@ bool ParserEngine::parseClass() {
 		if (ParseError) ParseError("No correct MatchPattern class"); return false;
 	}
 
-	std::string programm_name = buffer[1].value;
+	// Имя класса
+	std::string class_name = "";
+	// Наследники
+	std::vector<std::string> legatee;
+
+	class_name = buffer[1].value;
 	PosBuffer++;
 	
 	ClearJunkToken(direction::next);
 
-	std::vector<std::string> legatee;
 	// Проверяем, наследуются ли другие классы
 	if (matchCurrentToken(TTokenID::LeftParen))
 	{
@@ -154,6 +165,30 @@ bool ParserEngine::parseClass() {
 		}
 	}
 
+	// Пропускаем RightParen
+	PosBuffer++;
+
+	// Парсим тело класса
+	while (neof() && !matchCurrentToken(TTokenID::End)) {
+		
+		// Проверяем видимость методов
+		// По умолчанию стоит публичный, если не найден один из других
+		// Как минимум позволяет избежать лишнюю проверку
+		int TypeScope = Scope::Public;
+		if (matchCurrentToken(TTokenID::Protected))
+			TypeScope = Scope::Protect;
+		if (matchCurrentToken(TTokenID::Private))
+			TypeScope = Scope::Private;
+
+		if (matchCurrentToken(TTokenID::Property))
+			if (!parseProperty(TypeScope))
+				return false;
+	}
+	return true;
+};
+
+bool ParserEngine::parseProperty(int TypeScope) {
+	// Получаем тело 
 	return true;
 };
 
