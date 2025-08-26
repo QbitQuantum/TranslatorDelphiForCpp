@@ -44,16 +44,17 @@ class ParserEngine {
 	std::vector<LexToken> ParserBuffer;
 	std::vector<std::pair<int, AST*>> AstBuffer;
 	
-	bool Shift(bool _direction);
+	void Shift(bool _direction);
 	
 	void ClearJunkToken(bool _direction);
-	LexToken GetToken();
+	
 	bool matchCurrentToken(TTokenID kind);
-	std::string GetCurrentTokenValue();
 	bool JunkToken();
 	bool neof() {
 		return PosBuffer < ParserBuffer.size();
 	}
+
+	LexToken GetToken();
 
 	std::vector<LexToken> GetLexToken(
 		int amount, 
@@ -255,7 +256,7 @@ bool ParserEngine::parseProperty(std::vector<property_method>& _property_method)
 	{
 		if (ParseError) ParseError("No find name property"); return false;
 	}
-	property_name = GetCurrentTokenValue();
+	property_name = GetToken().value;
 	
 	PosBuffer++;
 	ClearJunkToken(direction::next);
@@ -273,7 +274,7 @@ bool ParserEngine::parseProperty(std::vector<property_method>& _property_method)
 		if (ParseError) ParseError("No find type property method"); return false;
 	}
 
-	property_type = GetCurrentTokenValue();
+	property_type = GetToken().value;
 
 
 	while (neof() && !matchCurrentToken(TTokenID::Semicolon)) {
@@ -285,7 +286,7 @@ bool ParserEngine::parseProperty(std::vector<property_method>& _property_method)
 			{
 				if (ParseError) ParseError("No correct name read property"); return false;
 			}
-			property_read_name = GetCurrentTokenValue();
+			property_read_name = GetToken().value;
 		}
 
 		if (matchCurrentToken(TTokenID::Write))
@@ -296,7 +297,7 @@ bool ParserEngine::parseProperty(std::vector<property_method>& _property_method)
 			{
 				if (ParseError) ParseError("No correct name write property"); return false;
 			}
-			property_write_name = GetCurrentTokenValue();
+			property_write_name = GetToken().value;
 		}
 		PosBuffer++;
 	}
@@ -352,10 +353,6 @@ LexToken ParserEngine::GetToken() {
 	return ParserBuffer[PosBuffer];
 }
 
-std::string ParserEngine::GetCurrentTokenValue() {
-	return ParserBuffer[PosBuffer].value;
-}
-
 bool ParserEngine::matchCurrentToken(TTokenID kind) {
 	return ParserBuffer[PosBuffer].type == kind;
 }
@@ -376,8 +373,7 @@ std::vector<LexToken> ParserEngine::GetLexToken(int amount, const bool _directio
 	return cache;
 }
 
-bool ParserEngine::Shift(bool _direction) {
+void ParserEngine::Shift(bool _direction) {
 	_direction == direction::next ? PosBuffer++ : PosBuffer--;
 	ClearJunkToken(_direction);
-	return true;
 }
