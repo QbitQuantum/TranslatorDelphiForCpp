@@ -29,6 +29,7 @@ EUpdateError = class(EDatabaseError)
   private
     FErrorCode: Integer;
     FPreviousError: Integer;
+    FPosition: Integer;
     FContext: string;
     FOriginalException: Exception;
   public
@@ -39,6 +40,7 @@ EUpdateError = class(EDatabaseError)
     property ErrorCode: Integer read FErrorCode;
     property PreviousError: Integer read FPreviousError;
     property OriginalException: Exception read FOriginalException;
+    property Position: Integer read FPosition write FPosition;
   end;
 )";
 
