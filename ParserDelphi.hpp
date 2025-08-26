@@ -29,6 +29,14 @@ namespace direction {
 
 class ParserEngine {
 	
+	struct property_method
+	{
+		int TypeScope;
+		std::string name;
+		std::vector<std::pair<std::string, std::vector<std::string>>> methods;
+	};
+
+
 	int PosBuffer = 0;
 
 	std::vector<LexToken> ParserBuffer;
@@ -39,6 +47,7 @@ class ParserEngine {
 	LexToken GetCleanToken(bool SafePosition, bool _direction);
 	bool matchDierctionToken(bool _direction, TTokenID kind);
 	bool matchCurrentToken(TTokenID kind);
+	std::string GetCurrentTokenValue();
 	bool JunkToken();
 	bool neof() {
 		return PosBuffer < ParserBuffer.size();
@@ -56,7 +65,7 @@ class ParserEngine {
 
 	bool parseUnit();
 	bool parseClass();
-	bool parseProperty(int TypeScope);
+	bool parseProperty(std::vector<property_method>& _property_method);
 	bool parseConstructor(int TypeScope);
 	bool parseDestructor(int TypeScope);
 
@@ -152,6 +161,8 @@ bool ParserEngine::parseClass() {
 	std::vector<std::string> legatee;
 	// Декларация переменных
 	std::vector<std::pair<std::string, std::string>> declaration_param;
+	// Декларация методов (property)	
+	std::vector<property_method> property_methods;
 
 	class_name = buffer[1].value;
 	PosBuffer++;
@@ -210,8 +221,11 @@ bool ParserEngine::parseClass() {
 		}
 
 		if (matchCurrentToken(TTokenID::Property))
-			if (!parseProperty(TypeScope))
+		{
+			property_methods.push_back({ TypeScope /* Остальные по уммолчанию*/});
+			if (!parseProperty(property_methods))
 				return false;
+		}
 
 		PosBuffer++;
 		ClearJunkToken(direction::next);
@@ -219,8 +233,28 @@ bool ParserEngine::parseClass() {
 	return true;
 };
 
-bool ParserEngine::parseProperty(int TypeScope) {
-	// Получаем тело 
+bool ParserEngine::parseProperty(std::vector<property_method>& _property_method) {
+	
+	std::string property_name = "";
+	
+	//Пропускаем текущий токен
+	PosBuffer++;
+	ClearJunkToken(direction::next);
+
+	if (!matchCurrentToken(TTokenID::Identifier))
+	{
+		if (ParseError) ParseError("No find name property"); return false;
+	}
+	property_name = GetCurrentTokenValue();
+	
+	PosBuffer++;
+	ClearJunkToken(direction::next);
+
+	if (!matchCurrentToken(TTokenID::Colon))
+	{
+		if (ParseError) ParseError("No find start declaration method property"); return false;
+	}
+
 	return true;
 };
 
@@ -279,6 +313,10 @@ bool ParserEngine::matchDierctionToken(bool _direction, TTokenID kind) {
 	bool result = matchCurrentToken(kind);
 	PosBuffer = oldPos; // Восстанавливаем позицию
 	return result;
+}
+
+std::string ParserEngine::GetCurrentTokenValue() {
+	return ParserBuffer[PosBuffer].value;
 }
 
 bool ParserEngine::matchCurrentToken(TTokenID kind) {
