@@ -306,7 +306,7 @@ bool ParserEngine::parseProperty(std::vector<property_method>& _property_method)
 		PosBuffer++;
 	}
 
-	auto Save = _property_method.back();
+	auto& Save = _property_method.back();
 	Save.name_method = property_name;
 	Save.type_method = property_type;
 	Save.name_read = property_read_name;
