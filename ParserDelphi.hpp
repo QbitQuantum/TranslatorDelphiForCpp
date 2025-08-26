@@ -44,10 +44,10 @@ class ParserEngine {
 	std::vector<LexToken> ParserBuffer;
 	std::vector<std::pair<int, AST*>> AstBuffer;
 	
+	bool Shift(bool _direction);
 	
 	void ClearJunkToken(bool _direction);
-	LexToken GetCleanToken(bool SafePosition, bool _direction);
-	bool matchDierctionToken(bool _direction, TTokenID kind);
+	LexToken GetToken();
 	bool matchCurrentToken(TTokenID kind);
 	std::string GetCurrentTokenValue();
 	bool JunkToken();
@@ -57,11 +57,6 @@ class ParserEngine {
 
 	std::vector<LexToken> GetLexToken(
 		int amount, 
-		bool _direction
-	);
-
-	bool MatchPattern(
-		std::vector<TTokenID>& tokens,
 		bool _direction
 	);
 
@@ -316,15 +311,17 @@ bool ParserEngine::parseProperty(std::vector<property_method>& _property_method)
 
 bool ParserEngine::parseConstructor(int TypeScope) {
 	// Заглушка
-	
-	PosBuffer++;
-	ClearJunkToken(direction::next);
+	std::string constructor_name = "";
+
+	Shift(direction::next);
+
 	if (!matchCurrentToken(TTokenID::Identifier))
 		return false;
-	std::string constructor_name = ParserBuffer[PosBuffer].value;
+
+	constructor_name = ParserBuffer[PosBuffer].value;
 	
-	PosBuffer++;
-	ClearJunkToken(direction::next);
+	Shift(direction::next);
+
 	if (!matchCurrentToken(TTokenID::LeftParen))
 		return false;
 
@@ -351,24 +348,8 @@ void ParserEngine::ClearJunkToken(bool _direction) {
 	}
 }
 
-LexToken ParserEngine::GetCleanToken(bool SafePosition, bool _direction) {
-	
-	int oldPos = PosBuffer;
-	_direction == direction::next ? PosBuffer++ : PosBuffer--;
-	ClearJunkToken(_direction);
-	LexToken token = ParserBuffer[PosBuffer];
-	if (SafePosition)
-		PosBuffer = oldPos; // Восстанавливаем позицию
-	return token;
-}
-
-bool ParserEngine::matchDierctionToken(bool _direction, TTokenID kind) {
-	int oldPos = PosBuffer;
-	_direction == direction::next ? PosBuffer++ : PosBuffer--;
-	ClearJunkToken(_direction);
-	bool result = matchCurrentToken(kind);
-	PosBuffer = oldPos; // Восстанавливаем позицию
-	return result;
+LexToken ParserEngine::GetToken() {
+	return ParserBuffer[PosBuffer];
 }
 
 std::string ParserEngine::GetCurrentTokenValue() {
@@ -383,35 +364,20 @@ bool ParserEngine::JunkToken() {
 	return matchCurrentToken(TTokenID::LineFeed) || matchCurrentToken(TTokenID::Space);
 }
 
-bool ParserEngine::MatchPattern(std::vector<TTokenID>& tokens, bool _direction) 
-{	
-	_direction == direction::next ? PosBuffer++ : PosBuffer--;
-	while (!tokens.empty()) {
-		TTokenID TypeToken;
-		ClearJunkToken(_direction);
-		if (_direction == direction::next) {
-			TypeToken = tokens.front();
-			if (!matchCurrentToken(TypeToken))
-				return false;
-			tokens.erase(tokens.begin());
-			PosBuffer++;
-		}
-		else {
-			TypeToken = tokens.back();
-			if (!matchCurrentToken(TypeToken))
-				return false;
-			tokens.pop_back();
-			PosBuffer--;
-		}
-	}
-	return true;
-}
-
 std::vector<LexToken> ParserEngine::GetLexToken(int amount, const bool _direction)
 {
 	std::vector<LexToken> cache;
 	cache.reserve(amount);
 	for (int i = 0; i < amount; i++)
-		cache.emplace_back(GetCleanToken(false, _direction));
+	{
+		Shift(_direction);
+		cache.emplace_back(GetToken());
+	}
 	return cache;
+}
+
+bool ParserEngine::Shift(bool _direction) {
+	_direction == direction::next ? PosBuffer++ : PosBuffer--;
+	ClearJunkToken(_direction);
+	return true;
 }
