@@ -32,8 +32,10 @@ class ParserEngine {
 	struct property_method
 	{
 		int TypeScope;
-		std::string name;
-		std::vector<std::pair<std::string, std::vector<std::string>>> methods;
+		std::string name_method;
+		std::string type_method;
+		std::string name_read;
+		std::string name_write;
 	};
 
 
@@ -189,11 +191,20 @@ bool ParserEngine::parseClass() {
 	while (neof() && !matchCurrentToken(TTokenID::End)) {
 		// Проверяем видимость методов
 		if (matchCurrentToken(TTokenID::Public))
+		{
 			TypeScope = Scope::Public;
+			PosBuffer++;
+		}
 		else if (matchCurrentToken(TTokenID::Protected))
+		{
 			TypeScope = Scope::Protect;
+			PosBuffer++;
+		}
 		else if (matchCurrentToken(TTokenID::Private))
+		{
 			TypeScope = Scope::Private;
+			PosBuffer++;
+		}
 
 		if (matchCurrentToken(TTokenID::Constructor)){
 			if (!parseConstructor(TypeScope))
@@ -205,8 +216,16 @@ bool ParserEngine::parseClass() {
 				return false;
 		}
 
+		if (matchCurrentToken(TTokenID::Property))
+		{
+			property_methods.push_back({});
+			property_methods.back().TypeScope = TypeScope;
+			if (!parseProperty(property_methods))
+				return false;
+		}
+
 		if (matchCurrentToken(TTokenID::Identifier)) {
-			
+
 			std::string SafeValueToken = ParserBuffer[PosBuffer].value;
 			const std::vector<LexToken> matchDeclareVar = {
 				LexToken{TTokenID::Colon, ":", 1, 1},
@@ -220,13 +239,6 @@ bool ParserEngine::parseClass() {
 				declaration_param.push_back({ SafeValueToken, bufferDeclareVar[1].value });
 		}
 
-		if (matchCurrentToken(TTokenID::Property))
-		{
-			property_methods.push_back({ TypeScope /* Остальные по уммолчанию*/});
-			if (!parseProperty(property_methods))
-				return false;
-		}
-
 		PosBuffer++;
 		ClearJunkToken(direction::next);
 	}
@@ -236,7 +248,10 @@ bool ParserEngine::parseClass() {
 bool ParserEngine::parseProperty(std::vector<property_method>& _property_method) {
 	
 	std::string property_name = "";
-	
+	std::string property_type = "";
+	std::string property_read_name = "";
+	std::string property_write_name = "";
+
 	//Пропускаем текущий токен
 	PosBuffer++;
 	ClearJunkToken(direction::next);
@@ -255,6 +270,47 @@ bool ParserEngine::parseProperty(std::vector<property_method>& _property_method)
 		if (ParseError) ParseError("No find start declaration method property"); return false;
 	}
 
+	PosBuffer++;
+	ClearJunkToken(direction::next);
+
+	if (!matchCurrentToken(TTokenID::Identifier))
+	{
+		if (ParseError) ParseError("No find type property method"); return false;
+	}
+
+	property_type = GetCurrentTokenValue();
+
+
+	while (neof() && !matchCurrentToken(TTokenID::Semicolon)) {
+		if (matchCurrentToken(TTokenID::Read))
+		{
+			PosBuffer++;
+			ClearJunkToken(direction::next);
+			if (!matchCurrentToken(TTokenID::Identifier))
+			{
+				if (ParseError) ParseError("No correct name read property"); return false;
+			}
+			property_read_name = GetCurrentTokenValue();
+		}
+
+		if (matchCurrentToken(TTokenID::Write))
+		{
+			PosBuffer++;
+			ClearJunkToken(direction::next);
+			if (!matchCurrentToken(TTokenID::Identifier))
+			{
+				if (ParseError) ParseError("No correct name write property"); return false;
+			}
+			property_write_name = GetCurrentTokenValue();
+		}
+		PosBuffer++;
+	}
+
+	auto Save = _property_method.back();
+	Save.name_method = property_name;
+	Save.type_method = property_type;
+	Save.name_read = property_read_name;
+	Save.name_write = property_write_name;
 	return true;
 };
 
