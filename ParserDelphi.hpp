@@ -194,20 +194,24 @@ bool ParserEngine::parseClass() {
 		case TTokenID::Private:
 			if (!parseScope(TypeScope))
 				return false;
+			Shift(direction::next);
 			break;
 		case TTokenID::Constructor:
 			if (!parseConstructor(TypeScope))
 				return false;
+			Shift(direction::next);
 			break;
 		case TTokenID::Destructor:
 			if (!parseDestructor(TypeScope))
 				return false;
+			Shift(direction::next);
 			break;
 		case TTokenID::Property:
 			property_methods.push_back({});
 			property_methods.back().TypeScope = TypeScope;
 			if (!parseProperty(property_methods))
 				return false;
+			Shift(direction::next);
 			break;
 		case TTokenID::Identifier:
 		{
@@ -222,13 +226,13 @@ bool ParserEngine::parseClass() {
 
 			if (matchDeclareVar == bufferDeclareVar)
 				declaration_param.push_back({ SafeValueToken, bufferDeclareVar[1].value });
+			Shift(direction::next);
 		}
 			break;
 		default:
+			Shift(direction::next);
 			break;
 		}
-
-		Shift(direction::next);
 	}
 	return true;
 };
@@ -311,30 +315,60 @@ bool ParserEngine::parseScope(int& TypeScope) {
 		TypeScope = Scope::Private;
 		break;
 	}
-	Shift(direction::next);
 	return true;
 };
 
 
 bool ParserEngine::parseConstructor(int TypeScope) {
-	// Заглушка
-	std::string constructor_name = "";
-
+	// Пропускаем текущий токен
 	Shift(direction::next);
 
 	if (!matchCurrentToken(TTokenID::Identifier))
+	{
+		if (matchCurrentToken(TTokenID::LeftParen))
+		{
+			if (ParseError) ParseError("No find name constructor");
+			return false;
+		}
+		if (ParseError) ParseError("No correct symbol");
 		return false;
+	}
 
-	constructor_name = ParserBuffer[PosBuffer].value;
+	std::string constructor_name = "";
+
+	constructor_name = GetToken().value;
 	
 	Shift(direction::next);
 
 	if (!matchCurrentToken(TTokenID::LeftParen))
+	{
+		if (ParseError) ParseError("No start declaration constructor");
 		return false;
+	}
+	using TypeArgument = std::string;
+	using NameArgument = std::string;
+	using Arguments = std::pair<TypeArgument, std::vector<NameArgument>>;
+
+	std::vector<Arguments> argument;
+
+	std::vector<std::string> CurrentStack;
 
 	while (neof() && !matchCurrentToken(TTokenID::RightParen)) {
-		PosBuffer++;
+
+		if (matchCurrentToken(TTokenID::Identifier))
+		{
+			CurrentStack.push_back(GetToken().value);
+		}
+		if (matchCurrentToken(TTokenID::Colon))
+		{
+			Shift(direction::next);
+			argument.push_back({ GetToken().value, CurrentStack });
+			CurrentStack.clear();
+		}
+		Shift(direction::next);
 	}
+
+	Shift(direction::next);
 	return true;
 };
 
@@ -360,7 +394,7 @@ LexToken ParserEngine::GetToken() {
 }
 
 bool ParserEngine::matchCurrentToken(TTokenID kind) {
-	return ParserBuffer[PosBuffer].type == kind;
+	return GetToken().type == kind;
 }
 
 bool ParserEngine::JunkToken() {
