@@ -64,6 +64,7 @@ class ParserEngine {
 	bool parseUnit();
 	bool parseClass();
 	bool parseProperty(std::vector<property_method>& _property_method);
+	bool parseScope(int& TypeScope);
 	bool parseConstructor(int TypeScope);
 	bool parseDestructor(int TypeScope);
 
@@ -186,20 +187,11 @@ bool ParserEngine::parseClass() {
 	// Парсим тело класса
 	while (neof() && !matchCurrentToken(TTokenID::End)) {
 		// Проверяем видимость методов
-		if (matchCurrentToken(TTokenID::Public))
-		{
-			TypeScope = Scope::Public;
-			PosBuffer++;
-		}
-		else if (matchCurrentToken(TTokenID::Protected))
-		{
-			TypeScope = Scope::Protect;
-			PosBuffer++;
-		}
-		else if (matchCurrentToken(TTokenID::Private))
-		{
-			TypeScope = Scope::Private;
-			PosBuffer++;
+		if (matchCurrentToken(TTokenID::Public) || 
+			matchCurrentToken(TTokenID::Protected) ||
+			matchCurrentToken(TTokenID::Private)) {
+			if (!parseScope(TypeScope))
+				return false;
 		}
 
 		if (matchCurrentToken(TTokenID::Constructor)){
@@ -309,6 +301,26 @@ bool ParserEngine::parseProperty(std::vector<property_method>& _property_method)
 	Save.name_write = property_write_name;
 	return true;
 };
+
+bool ParserEngine::parseScope(int& TypeScope) {
+	switch (GetToken().type)
+	{
+	case TTokenID::Public:
+		TypeScope = Scope::Public;
+		PosBuffer++;
+		break;
+	case TTokenID::Protected:
+		TypeScope = Scope::Protect;
+		PosBuffer++;
+		break;
+	case TTokenID::Private:
+		TypeScope = Scope::Private;
+		PosBuffer++;
+		break;
+	}
+	return true;
+};
+
 
 bool ParserEngine::parseConstructor(int TypeScope) {
 	// Заглушка
