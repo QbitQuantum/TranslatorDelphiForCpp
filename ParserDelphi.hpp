@@ -29,6 +29,8 @@ namespace direction {
 
 class ParserEngine {
 	
+	using DeclareArgumentFunctions = std::vector<std::pair<std::string, std::vector<std::string>>>;
+
 	struct property_method
 	{
 		int TypeScope;
@@ -67,6 +69,7 @@ class ParserEngine {
 	bool parseScope(int& TypeScope);
 	bool parseConstructor(int TypeScope);
 	bool parseDestructor(int TypeScope);
+	bool parseDeclareFunction(std::vector<std::pair<std::string, std::vector<std::string>>> &Declare);
 
 public:
 	ParserEngine(std::vector<LexToken> Buffer) { ParserBuffer = Buffer; };
@@ -336,20 +339,33 @@ bool ParserEngine::parseConstructor(int TypeScope) {
 
 	std::string constructor_name = "";
 
+	DeclareArgumentFunctions argument;
+
 	constructor_name = GetToken().value;
 	
 	Shift(direction::next);
 
-	if (!matchCurrentToken(TTokenID::LeftParen))
+	if (!parseDeclareFunction(argument))
 	{
-		if (ParseError) ParseError("No start declaration constructor");
+		if (ParseError) ParseError("No correct parse declare function");
 		return false;
 	}
-	using TypeArgument = std::string;
-	using NameArgument = std::string;
-	using Arguments = std::pair<TypeArgument, std::vector<NameArgument>>;
 
-	std::vector<Arguments> argument;
+	Shift(direction::next);
+	return true;
+};
+
+bool ParserEngine::parseDestructor(int TypeScope) {
+	// Получаем деструктор 
+	return true;
+};
+
+bool ParserEngine::parseDeclareFunction(DeclareArgumentFunctions& Declare) {
+	if (!matchCurrentToken(TTokenID::LeftParen))
+	{
+		if (ParseError) ParseError("No start declaration body function");
+		return false;
+	}
 
 	std::vector<std::string> CurrentStack;
 
@@ -362,18 +378,11 @@ bool ParserEngine::parseConstructor(int TypeScope) {
 		if (matchCurrentToken(TTokenID::Colon))
 		{
 			Shift(direction::next);
-			argument.push_back({ GetToken().value, CurrentStack });
+			Declare.push_back({ GetToken().value, CurrentStack });
 			CurrentStack.clear();
 		}
 		Shift(direction::next);
 	}
-
-	Shift(direction::next);
-	return true;
-};
-
-bool ParserEngine::parseDestructor(int TypeScope) {
-	// Получаем деструктор 
 	return true;
 };
 
