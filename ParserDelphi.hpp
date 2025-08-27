@@ -186,35 +186,34 @@ bool ParserEngine::parseClass() {
 	
 	// Парсим тело класса
 	while (neof() && !matchCurrentToken(TTokenID::End)) {
-		// Проверяем видимость методов
-		if (matchCurrentToken(TTokenID::Public) || 
-			matchCurrentToken(TTokenID::Protected) ||
-			matchCurrentToken(TTokenID::Private)) {
+		LexToken token = GetToken();
+
+		switch (token.type)
+		{
+			// Проверяем видимость методов
+		case TTokenID::Public:
+		case TTokenID::Protected:
+		case TTokenID::Private:
 			if (!parseScope(TypeScope))
 				return false;
-		}
-
-		if (matchCurrentToken(TTokenID::Constructor)){
+			break;
+		case TTokenID::Constructor:
 			if (!parseConstructor(TypeScope))
 				return false;
-		}
-
-		if (matchCurrentToken(TTokenID::Destructor)) {
+			break;
+		case TTokenID::Destructor:
 			if (!parseDestructor(TypeScope))
 				return false;
-		}
-
-		if (matchCurrentToken(TTokenID::Property))
-		{
+			break;
+		case TTokenID::Property:
 			property_methods.push_back({});
 			property_methods.back().TypeScope = TypeScope;
 			if (!parseProperty(property_methods))
 				return false;
-		}
-
-		if (matchCurrentToken(TTokenID::Identifier)) {
-
-			std::string SafeValueToken = ParserBuffer[PosBuffer].value;
+			break;
+		case TTokenID::Identifier:
+		{
+			std::string SafeValueToken = token.value;
 			const std::vector<LexToken> matchDeclareVar = {
 				LexToken{TTokenID::Colon, ":", 1, 1},
 				LexToken{TTokenID::Identifier, "", 1, 1},
@@ -225,6 +224,10 @@ bool ParserEngine::parseClass() {
 
 			if (matchDeclareVar == bufferDeclareVar)
 				declaration_param.push_back({ SafeValueToken, bufferDeclareVar[1].value });
+		}
+			break;
+		default:
+			break;
 		}
 
 		PosBuffer++;
