@@ -94,14 +94,14 @@ void ParserEngine::ParserRun() {
 
 			break;
 		};
-		PosBuffer++;
-		ClearJunkToken(direction::next);
+		
+		Shift(direction::next);
 	}
 }
 
 bool ParserEngine::parseUnit() {
-	PosBuffer++; // Пропускаем 'unit'
-	ClearJunkToken(direction::next);
+	// Пропускаем 'unit'
+	Shift(direction::next);
 	std::vector<std::string> UnitName;
 
 	while (neof() && !matchCurrentToken(TTokenID::Semicolon)) {
@@ -164,23 +164,21 @@ bool ParserEngine::parseClass() {
 	std::vector<property_method> property_methods;
 
 	class_name = buffer[1].value;
-	PosBuffer++;
 	
-	ClearJunkToken(direction::next);
+	Shift(direction::next);
 
 	// Проверяем, наследуются ли другие классы
 	if (matchCurrentToken(TTokenID::LeftParen))
 	{
 		while (neof() && !matchCurrentToken(TTokenID::RightParen)) {
-			PosBuffer++;
-			ClearJunkToken(direction::next);
+			Shift(direction::next);
 			if (matchCurrentToken(TTokenID::Identifier))
 				legatee.push_back(ParserBuffer[PosBuffer].value);
 		}
 	}
 
 	// Пропускаем RightParen
-	PosBuffer++;
+	Shift(direction::next);
 
 	int TypeScope = Scope::Public;
 	
@@ -230,8 +228,7 @@ bool ParserEngine::parseClass() {
 			break;
 		}
 
-		PosBuffer++;
-		ClearJunkToken(direction::next);
+		Shift(direction::next);
 	}
 	return true;
 };
@@ -244,25 +241,23 @@ bool ParserEngine::parseProperty(std::vector<property_method>& _property_method)
 	std::string property_write_name = "";
 
 	//Пропускаем текущий токен
-	PosBuffer++;
-	ClearJunkToken(direction::next);
+	Shift(direction::next);
 
 	if (!matchCurrentToken(TTokenID::Identifier))
 	{
 		if (ParseError) ParseError("No find name property"); return false;
 	}
+
 	property_name = GetToken().value;
 	
-	PosBuffer++;
-	ClearJunkToken(direction::next);
+	Shift(direction::next);
 
 	if (!matchCurrentToken(TTokenID::Colon))
 	{
 		if (ParseError) ParseError("No find start declaration method property"); return false;
 	}
 
-	PosBuffer++;
-	ClearJunkToken(direction::next);
+	Shift(direction::next);
 
 	if (!matchCurrentToken(TTokenID::Identifier))
 	{
@@ -275,8 +270,7 @@ bool ParserEngine::parseProperty(std::vector<property_method>& _property_method)
 	while (neof() && !matchCurrentToken(TTokenID::Semicolon)) {
 		if (matchCurrentToken(TTokenID::Read))
 		{
-			PosBuffer++;
-			ClearJunkToken(direction::next);
+			Shift(direction::next);
 			if (!matchCurrentToken(TTokenID::Identifier))
 			{
 				if (ParseError) ParseError("No correct name read property"); return false;
@@ -286,15 +280,14 @@ bool ParserEngine::parseProperty(std::vector<property_method>& _property_method)
 
 		if (matchCurrentToken(TTokenID::Write))
 		{
-			PosBuffer++;
-			ClearJunkToken(direction::next);
+			Shift(direction::next);
 			if (!matchCurrentToken(TTokenID::Identifier))
 			{
 				if (ParseError) ParseError("No correct name write property"); return false;
 			}
 			property_write_name = GetToken().value;
 		}
-		PosBuffer++;
+		Shift(direction::next);
 	}
 
 	auto& Save = _property_method.back();
@@ -310,17 +303,15 @@ bool ParserEngine::parseScope(int& TypeScope) {
 	{
 	case TTokenID::Public:
 		TypeScope = Scope::Public;
-		PosBuffer++;
 		break;
 	case TTokenID::Protected:
 		TypeScope = Scope::Protect;
-		PosBuffer++;
 		break;
 	case TTokenID::Private:
 		TypeScope = Scope::Private;
-		PosBuffer++;
 		break;
 	}
+	Shift(direction::next);
 	return true;
 };
 
