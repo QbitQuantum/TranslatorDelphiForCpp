@@ -47,6 +47,13 @@ class ParserEngine {
 		DeclareArgumentFunctions body;
 	};
 
+	struct destructor_class
+	{
+		std::string destructor_name;
+		int TypeScope;
+		bool IsOvveride;
+	};
+
 
 	int PosBuffer = 0;
 
@@ -75,7 +82,7 @@ class ParserEngine {
 	bool parseProperty(std::vector<property_method>& _property_method);
 	bool parseScope(int& TypeScope);
 	bool parseConstructor(constructor_class& constructor);
-	bool parseDestructor(int TypeScope);
+	bool parseDestructor(destructor_class& destructor);
 	bool parseDeclareFunction(DeclareArgumentFunctions& Declare);
 
 public:
@@ -175,6 +182,8 @@ bool ParserEngine::parseClass() {
 	// Декларация конструктора
 	constructor_class Consructor;
 
+	destructor_class Destructor;
+
 	class_name = buffer[1].value;
 	
 	Shift(direction::next);
@@ -215,7 +224,8 @@ bool ParserEngine::parseClass() {
 			Shift(direction::next);
 			break;
 		case TTokenID::Destructor:
-			if (!parseDestructor(TypeScope))
+			Destructor.TypeScope = TypeScope;
+			if (!parseDestructor(Destructor))
 				return false;
 			Shift(direction::next);
 			break;
@@ -368,8 +378,37 @@ bool ParserEngine::parseConstructor(constructor_class& constructor) {
 	return true;
 };
 
-bool ParserEngine::parseDestructor(int TypeScope) {
-	// Получаем деструктор 
+bool ParserEngine::parseDestructor(destructor_class& destructor) {
+	Shift(direction::next);
+
+	if (!matchCurrentToken(TTokenID::Identifier))
+	{
+		if (matchCurrentToken(TTokenID::Semicolon))
+		{
+			if (ParseError) ParseError("No find name destructor_class");
+			return false;
+		}
+		if (ParseError) ParseError("No correct symbol");
+		return false;
+	}
+
+	std::string destructor_name = "";
+	bool isOvveride = false;
+
+	destructor_name = GetToken().value;
+
+	Shift(direction::next);
+	Shift(direction::next);
+
+	if (matchCurrentToken(TTokenID::Override))
+	{
+		isOvveride = true;
+		Shift(direction::next);
+	}
+
+	destructor.destructor_name = destructor_name;
+	destructor.IsOvveride = isOvveride;
+
 	return true;
 };
 
