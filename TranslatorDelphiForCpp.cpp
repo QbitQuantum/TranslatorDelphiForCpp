@@ -33,6 +33,7 @@ EUpdateError = class(EDatabaseError)
     FContext: string;
     FOriginalException: Exception;
   public
+    function MatchBinarOperatorWithTuple(SContext: TSContext; CArray: TIDExpression; SecondArg: TIDExpression): TIDDeclaration;
     constructor Create(NativeError, Context: string;
       ErrCode, PrevError: Integer; E: Exception);
     destructor Destroy; override;
