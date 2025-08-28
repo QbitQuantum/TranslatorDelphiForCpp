@@ -40,6 +40,13 @@ class ParserEngine {
 		std::string name_write;
 	};
 
+	struct constructor_class
+	{
+		std::string constructor_name;
+		int TypeScope;
+		DeclareArgumentFunctions body;
+	};
+
 
 	int PosBuffer = 0;
 
@@ -67,9 +74,9 @@ class ParserEngine {
 	bool parseClass();
 	bool parseProperty(std::vector<property_method>& _property_method);
 	bool parseScope(int& TypeScope);
-	bool parseConstructor(int TypeScope);
+	bool parseConstructor(constructor_class& constructor);
 	bool parseDestructor(int TypeScope);
-	bool parseDeclareFunction(std::vector<std::pair<std::string, std::vector<std::string>>> &Declare);
+	bool parseDeclareFunction(DeclareArgumentFunctions& Declare);
 
 public:
 	ParserEngine(std::vector<LexToken> Buffer) { ParserBuffer = Buffer; };
@@ -165,6 +172,8 @@ bool ParserEngine::parseClass() {
 	std::vector<std::pair<std::string, std::string>> declaration_param;
 	// Декларация методов (property)	
 	std::vector<property_method> property_methods;
+	// Декларация конструктора
+	constructor_class Consructor;
 
 	class_name = buffer[1].value;
 	
@@ -200,7 +209,8 @@ bool ParserEngine::parseClass() {
 			Shift(direction::next);
 			break;
 		case TTokenID::Constructor:
-			if (!parseConstructor(TypeScope))
+			Consructor.TypeScope = TypeScope;
+			if (!parseConstructor(Consructor))
 				return false;
 			Shift(direction::next);
 			break;
@@ -322,7 +332,7 @@ bool ParserEngine::parseScope(int& TypeScope) {
 };
 
 
-bool ParserEngine::parseConstructor(int TypeScope) {
+bool ParserEngine::parseConstructor(constructor_class& constructor) {
 	// Пропускаем текущий токен
 	Shift(direction::next);
 
@@ -330,7 +340,7 @@ bool ParserEngine::parseConstructor(int TypeScope) {
 	{
 		if (matchCurrentToken(TTokenID::LeftParen))
 		{
-			if (ParseError) ParseError("No find name constructor");
+			if (ParseError) ParseError("No find name constructor_class");
 			return false;
 		}
 		if (ParseError) ParseError("No correct symbol");
@@ -339,17 +349,20 @@ bool ParserEngine::parseConstructor(int TypeScope) {
 
 	std::string constructor_name = "";
 
-	DeclareArgumentFunctions argument;
+	DeclareArgumentFunctions Declare;
 
 	constructor_name = GetToken().value;
 	
 	Shift(direction::next);
 
-	if (!parseDeclareFunction(argument))
+	if (!parseDeclareFunction(Declare))
 	{
 		if (ParseError) ParseError("No correct parse declare function");
 		return false;
 	}
+	
+	constructor.constructor_name = constructor_name;
+	constructor.body = Declare;
 
 	Shift(direction::next);
 	return true;
