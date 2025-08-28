@@ -181,7 +181,7 @@ bool ParserEngine::parseClass() {
 	std::vector<property_method> property_methods;
 	// Декларация конструктора
 	constructor_class Consructor;
-
+	// Декларация десруктора
 	destructor_class Destructor;
 
 	class_name = buffer[1].value;
