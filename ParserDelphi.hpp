@@ -22,11 +22,6 @@ namespace Scope {
 	constexpr int Protect = 3;
 }
 
-namespace TypeSubroutine {
-	constexpr int Constructor = 0;
-	constexpr int Destructor = 1;
-}
-
 namespace direction {
 	constexpr bool next = true;
 	constexpr bool previous = false;
@@ -50,6 +45,14 @@ class ParserEngine {
 		std::string DefaultValue;
 	};
 
+	struct function_class
+	{
+		int TypeScope;
+		std::string function_name;
+		std::vector<BlockDeclareArgument> body_function;
+		std::string return_type;
+	};
+	
 	struct constructor_class
 	{
 		int TypeScope;
@@ -61,7 +64,6 @@ class ParserEngine {
 	{
 		int TypeScope;
 		std::string destructor_name;
-		std::vector<BlockDeclareArgument> body_function;
 		bool IsOvveride;
 	};
 
@@ -86,11 +88,12 @@ class ParserEngine {
 
 	bool parseUnit();
 	bool parseClass();
-	bool parseProperty(std::vector<property_method>& _property_method);
 	bool parseScope(int& TypeScope);
+	bool parseProperty(std::vector<property_method>& _property_method);
+	bool parseFunctions(std::vector<function_class>& _functions);
 	bool parseConstructor(constructor_class& constructor);
 	bool parseDestructor(destructor_class& destructor);
-	bool parseDeclareFunction(int TypeSubroutine, std::vector<BlockDeclareArgument>& Declare);
+	bool parseDeclareFunction(std::vector<BlockDeclareArgument>& Declare);
 
 public:
 	ParserEngine(std::vector<LexToken> Buffer) { ParserBuffer = Buffer; };
@@ -190,6 +193,8 @@ bool ParserEngine::parseClass() {
 	constructor_class Consructor;
 	// Декларация десруктора
 	destructor_class Destructor;
+	// Декларация функций
+	std::vector<function_class> functions;
 
 	class_name = buffer[1].value;
 	
@@ -240,6 +245,13 @@ bool ParserEngine::parseClass() {
 			property_methods.push_back({});
 			property_methods.back().TypeScope = TypeScope;
 			if (!parseProperty(property_methods))
+				return false;
+			Shift(direction::next);
+			break;
+		case TTokenID::Function:
+			functions.push_back({});
+			functions.back().TypeScope = TypeScope;
+			if (!parseFunctions(functions))
 				return false;
 			Shift(direction::next);
 			break;
@@ -332,6 +344,53 @@ bool ParserEngine::parseProperty(std::vector<property_method>& _property_method)
 	return true;
 };
 
+bool ParserEngine::parseFunctions(std::vector<function_class>& _functions) {
+
+	// Пропускаем текущий токен
+	Shift(direction::next);
+
+	if (!matchCurrentToken(TTokenID::Identifier))
+	{
+		if (matchCurrentToken(TTokenID::LeftParen))
+		{
+			if (ParseError) ParseError("No find name constructor_class");
+			return false;
+		}
+		if (ParseError) ParseError("No correct symbol");
+		return false;
+	}
+
+	std::string function_name = "";
+
+	function_name = GetToken().value;
+
+	Shift(direction::next);
+
+	auto& Save = _functions.back();
+	Save.function_name = function_name;
+
+	if (!parseDeclareFunction(Save.body_function))
+		return false;
+
+	Shift(direction::next);
+
+	if (!matchCurrentToken(TTokenID::Colon))
+	{
+		if (ParseError) ParseError("No start declaration return type function");
+		return false;
+	}
+	Shift(direction::next);
+	if (!matchCurrentToken(TTokenID::Identifier))
+	{
+		if (ParseError) ParseError("No correct symbol");
+		return false;
+	}
+
+	Save.return_type = GetToken().value;
+	Shift(direction::next);
+	return true;
+};
+
 bool ParserEngine::parseScope(int& TypeScope) {
 	switch (GetToken().type)
 	{
@@ -370,7 +429,7 @@ bool ParserEngine::parseConstructor(constructor_class& constructor) {
 	
 	Shift(direction::next);
 
-	if (!parseDeclareFunction(TypeSubroutine::Constructor, constructor.body_function))
+	if (!parseDeclareFunction(constructor.body_function))
 		return false;
 	
 	constructor.constructor_name = constructor_name;
@@ -401,9 +460,6 @@ bool ParserEngine::parseDestructor(destructor_class& destructor) {
 	Shift(direction::next);
 	Shift(direction::next);
 
-	if (!parseDeclareFunction(TypeSubroutine::Destructor, destructor.body_function))
-		return false;
-
 	if (isOvveride = matchCurrentToken(TTokenID::Override); isOvveride)
 		Shift(direction::next);
 
@@ -413,10 +469,7 @@ bool ParserEngine::parseDestructor(destructor_class& destructor) {
 	return true;
 };
 
-bool ParserEngine::parseDeclareFunction(int TypeSubroutine, std::vector<BlockDeclareArgument>& Declare) {
-	
-	if (TypeSubroutine == TypeSubroutine::Destructor)
-		return true;
+bool ParserEngine::parseDeclareFunction(std::vector<BlockDeclareArgument>& Declare) {
 
 	if (!matchCurrentToken(TTokenID::LeftParen))
 	{
