@@ -34,6 +34,7 @@ EUpdateError = class(EDatabaseError)
     FOriginalException: Exception;
   public
     function MatchBinarOperatorWithTuple(SContext: TSContext; CArray: TIDExpression; SecondArg: TIDExpression): TIDDeclaration;
+    procedure ParseEnumType(Scope: TScope; Decl: TIDEnum);
     constructor Create(const NativeError, Context: string; ErrCode, PrevError: Integer; E: Exception);
     destructor Destroy; override;
     property Context: string read FContext;
