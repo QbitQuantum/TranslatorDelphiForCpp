@@ -214,9 +214,9 @@ bool ParserEngine::parseClass() {
 	if (matchCurrentToken(TTokenID::LeftParen))
 	{
 		while (neof() && !matchCurrentToken(TTokenID::RightParen)) {
-			Shift(direction::next);
 			if (matchCurrentToken(TTokenID::Identifier))
 				legatee.push_back(ParserBuffer[PosBuffer].value);
+			Shift(direction::next);
 		}
 	}
 
