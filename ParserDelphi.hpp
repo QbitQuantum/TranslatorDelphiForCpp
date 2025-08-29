@@ -22,6 +22,11 @@ namespace Scope {
 	constexpr int Protect = 3;
 }
 
+namespace TypeSubroutine {
+	constexpr int Constructor = 0;
+	constexpr int Destructor = 1;
+}
+
 namespace direction {
 	constexpr bool next = true;
 	constexpr bool previous = false;
@@ -54,8 +59,9 @@ class ParserEngine {
 
 	struct destructor_class
 	{
-		std::string destructor_name;
 		int TypeScope;
+		std::string destructor_name;
+		std::vector<BlockDeclareArgument> body_function;
 		bool IsOvveride;
 	};
 
@@ -84,7 +90,7 @@ class ParserEngine {
 	bool parseScope(int& TypeScope);
 	bool parseConstructor(constructor_class& constructor);
 	bool parseDestructor(destructor_class& destructor);
-	bool parseDeclareFunction(std::vector<BlockDeclareArgument>& Declare);
+	bool parseDeclareFunction(int TypeSubroutine, std::vector<BlockDeclareArgument>& Declare);
 
 public:
 	ParserEngine(std::vector<LexToken> Buffer) { ParserBuffer = Buffer; };
@@ -364,7 +370,7 @@ bool ParserEngine::parseConstructor(constructor_class& constructor) {
 	
 	Shift(direction::next);
 
-	if (!parseDeclareFunction(constructor.body_function))
+	if (!parseDeclareFunction(TypeSubroutine::Constructor, constructor.body_function))
 		return false;
 	
 	constructor.constructor_name = constructor_name;
@@ -395,11 +401,11 @@ bool ParserEngine::parseDestructor(destructor_class& destructor) {
 	Shift(direction::next);
 	Shift(direction::next);
 
-	if (matchCurrentToken(TTokenID::Override))
-	{
-		isOvveride = true;
+	if (!parseDeclareFunction(TypeSubroutine::Destructor, destructor.body_function))
+		return false;
+
+	if (isOvveride = matchCurrentToken(TTokenID::Override); isOvveride)
 		Shift(direction::next);
-	}
 
 	destructor.destructor_name = destructor_name;
 	destructor.IsOvveride = isOvveride;
@@ -407,7 +413,11 @@ bool ParserEngine::parseDestructor(destructor_class& destructor) {
 	return true;
 };
 
-bool ParserEngine::parseDeclareFunction(std::vector<BlockDeclareArgument>& Declare) {
+bool ParserEngine::parseDeclareFunction(int TypeSubroutine, std::vector<BlockDeclareArgument>& Declare) {
+	
+	if (TypeSubroutine == TypeSubroutine::Destructor)
+		return true;
+
 	if (!matchCurrentToken(TTokenID::LeftParen))
 	{
 		if (ParseError) ParseError("No start declaration body function");
