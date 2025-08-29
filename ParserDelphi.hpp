@@ -45,6 +45,13 @@ class ParserEngine {
 		std::string DefaultValue;
 	};
 
+	struct procedure_class
+	{
+		int TypeScope;
+		std::string procedure_name;
+		std::vector<BlockDeclareArgument> body_function;
+	};
+	
 	struct function_class
 	{
 		int TypeScope;
@@ -91,6 +98,7 @@ class ParserEngine {
 	bool parseScope(int& TypeScope);
 	bool parseProperty(std::vector<property_method>& _property_method);
 	bool parseFunctions(std::vector<function_class>& _functions);
+	bool parseProcedure(std::vector<procedure_class>& _procedure);
 	bool parseConstructor(constructor_class& constructor);
 	bool parseDestructor(destructor_class& destructor);
 	bool parseDeclareFunction(std::vector<BlockDeclareArgument>& Declare);
@@ -195,6 +203,8 @@ bool ParserEngine::parseClass() {
 	destructor_class Destructor;
 	// Декларация функций
 	std::vector<function_class> functions;
+	// Декларация процедур
+	std::vector<procedure_class> procedures;
 
 	class_name = buffer[1].value;
 	
@@ -252,6 +262,13 @@ bool ParserEngine::parseClass() {
 			functions.push_back({});
 			functions.back().TypeScope = TypeScope;
 			if (!parseFunctions(functions))
+				return false;
+			Shift(direction::next);
+			break;
+		case TTokenID::Procedure:
+			procedures.push_back({});
+			procedures.back().TypeScope = TypeScope;
+			if (!parseProcedure(procedures))
 				return false;
 			Shift(direction::next);
 			break;
@@ -387,6 +404,38 @@ bool ParserEngine::parseFunctions(std::vector<function_class>& _functions) {
 	}
 
 	Save.return_type = GetToken().value;
+	Shift(direction::next);
+	return true;
+};
+
+bool ParserEngine::parseProcedure(std::vector<procedure_class>& _procedure) {
+
+	// Пропускаем текущий токен
+	Shift(direction::next);
+
+	if (!matchCurrentToken(TTokenID::Identifier))
+	{
+		if (matchCurrentToken(TTokenID::LeftParen))
+		{
+			if (ParseError) ParseError("No find name procedure_class");
+			return false;
+		}
+		if (ParseError) ParseError("No correct symbol");
+		return false;
+	}
+
+	std::string function_name = "";
+
+	function_name = GetToken().value;
+
+	Shift(direction::next);
+
+	auto& Save = _procedure.back();
+	Save.procedure_name = function_name;
+
+	if (!parseDeclareFunction(Save.body_function))
+		return false;
+
 	Shift(direction::next);
 	return true;
 };
