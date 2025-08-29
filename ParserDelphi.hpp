@@ -29,8 +29,6 @@ namespace direction {
 
 class ParserEngine {
 	
-	using DeclareArgumentFunctions = std::vector<std::pair<std::string, std::vector<std::string>>>;
-
 	struct property_method
 	{
 		int TypeScope;
@@ -40,11 +38,18 @@ class ParserEngine {
 		std::string name_write;
 	};
 
+	struct BlockDeclareArgument {
+		std::string Qualifier;
+		std::vector<std::string> Arguments;
+		std::string TypeArgument;
+		std::string DefaultValue;
+	};
+
 	struct constructor_class
 	{
-		std::string constructor_name;
 		int TypeScope;
-		DeclareArgumentFunctions body;
+		std::string constructor_name;
+		std::vector<BlockDeclareArgument> body_function;
 	};
 
 	struct destructor_class
@@ -53,7 +58,6 @@ class ParserEngine {
 		int TypeScope;
 		bool IsOvveride;
 	};
-
 
 	int PosBuffer = 0;
 
@@ -65,17 +69,14 @@ class ParserEngine {
 	void ClearJunkToken(bool _direction);
 	
 	bool matchCurrentToken(TTokenID kind);
+	bool IsQualifierToken();
+
 	bool JunkToken();
-	bool neof() {
-		return PosBuffer < ParserBuffer.size();
-	}
+	bool neof() { return PosBuffer < ParserBuffer.size();}
 
 	LexToken GetToken();
 
-	std::vector<LexToken> GetLexToken(
-		int amount, 
-		bool _direction
-	);
+	std::vector<LexToken> GetLexToken(int amount, bool _direction);
 
 	bool parseUnit();
 	bool parseClass();
@@ -83,7 +84,7 @@ class ParserEngine {
 	bool parseScope(int& TypeScope);
 	bool parseConstructor(constructor_class& constructor);
 	bool parseDestructor(destructor_class& destructor);
-	bool parseDeclareFunction(DeclareArgumentFunctions& Declare);
+	bool parseDeclareFunction(std::vector<BlockDeclareArgument>& Declare);
 
 public:
 	ParserEngine(std::vector<LexToken> Buffer) { ParserBuffer = Buffer; };
@@ -359,20 +360,14 @@ bool ParserEngine::parseConstructor(constructor_class& constructor) {
 
 	std::string constructor_name = "";
 
-	DeclareArgumentFunctions Declare;
-
 	constructor_name = GetToken().value;
 	
 	Shift(direction::next);
 
-	if (!parseDeclareFunction(Declare))
-	{
-		if (ParseError) ParseError("No correct parse declare function");
+	if (!parseDeclareFunction(constructor.body_function))
 		return false;
-	}
 	
 	constructor.constructor_name = constructor_name;
-	constructor.body = Declare;
 
 	Shift(direction::next);
 	return true;
@@ -412,29 +407,68 @@ bool ParserEngine::parseDestructor(destructor_class& destructor) {
 	return true;
 };
 
-bool ParserEngine::parseDeclareFunction(DeclareArgumentFunctions& Declare) {
+bool ParserEngine::parseDeclareFunction(std::vector<BlockDeclareArgument>& Declare) {
 	if (!matchCurrentToken(TTokenID::LeftParen))
 	{
 		if (ParseError) ParseError("No start declaration body function");
 		return false;
 	}
 
-	std::vector<std::string> CurrentStack;
-
+	BlockDeclareArgument CurrentDeclare;
 	while (neof() && !matchCurrentToken(TTokenID::RightParen)) {
+		
+		if (IsQualifierToken())
+		{
+			if (!CurrentDeclare.Qualifier.empty())
+			{
+				if (ParseError) ParseError("Error reinitializing qualifier");
+				return false;
+			}
+			CurrentDeclare.Qualifier = GetToken().value;
+		}
 
 		if (matchCurrentToken(TTokenID::Identifier))
-		{
-			CurrentStack.push_back(GetToken().value);
-		}
+			CurrentDeclare.Arguments.push_back(GetToken().value);
+
 		if (matchCurrentToken(TTokenID::Colon))
 		{
 			Shift(direction::next);
-			Declare.push_back({ GetToken().value, CurrentStack });
-			CurrentStack.clear();
+
+			if (!matchCurrentToken(TTokenID::Identifier))
+			{
+				if (ParseError) ParseError("No type argument");
+				return false;
+			}
+
+			CurrentDeclare.TypeArgument = GetToken().value;
+
+			Shift(direction::next);
+
+			if (matchCurrentToken(TTokenID::Equals))
+			{
+				if (CurrentDeclare.Arguments.size() > 2)
+				{
+					if (ParseError) ParseError("No argument more two");
+					return false;
+				}
+				
+				Shift(direction::next);
+				CurrentDeclare.DefaultValue = GetToken().value;
+			}
+			
+			Declare.push_back(CurrentDeclare);
+
+			CurrentDeclare.Arguments.clear();
+			CurrentDeclare.DefaultValue = "";
+			CurrentDeclare.Qualifier = "";
+			CurrentDeclare.TypeArgument = "";
+			
+			if (matchCurrentToken(TTokenID::RightParen))
+				break;
 		}
 		Shift(direction::next);
 	}
+
 	return true;
 };
 
@@ -456,6 +490,13 @@ LexToken ParserEngine::GetToken() {
 
 bool ParserEngine::matchCurrentToken(TTokenID kind) {
 	return GetToken().type == kind;
+}
+
+bool ParserEngine::IsQualifierToken() {
+	return 
+		matchCurrentToken(TTokenID::Const) ||
+		matchCurrentToken(TTokenID::Var) || 
+		matchCurrentToken(TTokenID::Out);
 }
 
 bool ParserEngine::JunkToken() {

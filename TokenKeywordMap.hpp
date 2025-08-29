@@ -69,12 +69,6 @@ uint32_t PascalHash(const std::string& s, uint32_t seed = 0) {
 }
 
 static const std::unordered_map<uint32_t, TTokenID> TokenKeywordMap = {
-
-    // ===== Литералы =====
-    {ConstexprPascalHash("true"),        {TTokenID::True}},
-    {ConstexprPascalHash("false"),        {TTokenID::False}},
-    {ConstexprPascalHash("nil"),        {TTokenID::Nil}},
-
     // ===== Операторы (расширенный) =====
     // Арифметические
     {ConstexprPascalHash("div"),        {TTokenID::Div}},
