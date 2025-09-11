@@ -102,6 +102,7 @@ class ParserEngine {
 	bool parseConstructor(constructor_class& constructor);
 	bool parseDestructor(destructor_class& destructor);
 	bool parseDeclareFunction(std::vector<BlockDeclareArgument>& Declare);
+	bool parseDeclareVar(std::vector<std::pair<std::string, std::string>> Var);
 
 public:
 	ParserEngine(std::vector<LexToken> Buffer) { ParserBuffer = Buffer; };

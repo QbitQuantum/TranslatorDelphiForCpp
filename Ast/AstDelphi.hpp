@@ -61,6 +61,33 @@ public:
     }
 };
 
+class ProcedureDeclNode : public AST {
+    std::string name;
+    std::vector<std::string> params;
+    std::vector<AST*> body;  // Тело процедуры (список statement'ов)
+public:
+    ProcedureDeclNode(const std::string& name, const std::vector<std::string>& params)
+        : name(name), params(params) {
+    }
+
+    ~ProcedureDeclNode() override { for (AST* stmt : body) delete stmt; }
+
+    void addStatement(AST* stmt) { body.push_back(stmt); }
+
+    void print(int indent) const override {
+        std::cout << std::string(indent, ' ') << "Procedure: " << name << "(";
+        for (size_t i = 0; i < params.size(); ++i) {
+            if (i != 0) std::cout << ", ";
+            std::cout << params[i];
+        }
+        std::cout << ")" << std::endl;
+
+        for (const AST* stmt : body) {
+            stmt->print(indent + 4);
+        }
+    }
+};
+
 // Узел: объявление переменной
 class VarDeclNode : public AST {
     std::string name;
