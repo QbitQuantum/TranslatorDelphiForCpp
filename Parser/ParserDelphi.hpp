@@ -60,6 +60,11 @@ class ParserEngine {
 		std::string return_type;
 	};
 	
+	struct functions_class
+	{
+		std::vector<function_class> functions;
+	};
+
 	struct constructor_class
 	{
 		int TypeScope;
@@ -203,7 +208,7 @@ bool ParserEngine::parseClass() {
 	// Декларация десруктора
 	destructor_class Destructor;
 	// Декларация функций
-	std::vector<function_class> functions;
+	functions_class Functions;
 	// Декларация процедур
 	std::vector<procedure_class> procedures;
 
@@ -260,9 +265,9 @@ bool ParserEngine::parseClass() {
 			Shift(direction::next);
 			break;
 		case TTokenID::Function:
-			functions.push_back({});
-			functions.back().TypeScope = TypeScope;
-			if (!parseFunctions(functions))
+			Functions.functions.push_back({});
+			Functions.functions.back().TypeScope = TypeScope;
+			if (!parseFunctions(Functions.functions))
 				return false;
 			Shift(direction::next);
 			break;
